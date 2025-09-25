@@ -1,0 +1,52 @@
+-- สร้างฐานข้อมูลและใช้งาน
+CREATE DATABASE school_maintenance;
+USE school_maintenance;
+
+-- สร้างตารางผู้ใช้
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'staff') NOT NULL
+);
+
+-- สร้างตารางคำขอซ่อมบำรุง
+CREATE TABLE maintenance_requests (
+    request_id INT AUTO_INCREMENT PRIMARY KEY,
+    reporter_name VARCHAR(100) NOT NULL,
+    damaged_item VARCHAR(100) NOT NULL,
+    location VARCHAR(100) NOT NULL,
+    problem_details TEXT NOT NULL,
+    image_path VARCHAR(255),
+    notification_date DATE NOT NULL,
+    status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+    action_details TEXT
+);
+
+-- สร้างตารางแบบประเมินความพึงพอใจ
+CREATE TABLE satisfaction_surveys (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    es_id1 INT NOT NULL,
+    es_id2 INT DEFAULT NULL,
+    es_id3 INT DEFAULT NULL,
+    es_id4 INT DEFAULT NULL,
+    es_id5 INT DEFAULT NULL,
+    es_id6 INT DEFAULT NULL,
+    es_id7 INT DEFAULT NULL,
+    es_id8 INT DEFAULT NULL,
+    es_id9 INT DEFAULT NULL,
+    es_id10 INT DEFAULT NULL,
+    es_id11 INT DEFAULT NULL,
+    es_id12 INT DEFAULT NULL,
+    es_id13 INT DEFAULT NULL,
+    es_id14 INT DEFAULT NULL,
+    es_complain TEXT,
+    submission_date DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- เพิ่มข้อมูลผู้ใช้ตัวอย่าง
+INSERT INTO users (username, password, role) VALUES
+('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'), -- password: "password"
+('staff', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'staff'); -- password: "password"

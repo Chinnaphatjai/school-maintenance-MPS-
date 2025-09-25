@@ -1,0 +1,116 @@
+<?php
+session_start();
+require 'config.php';
+require 'vendor/autoload.php';
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
+$stmt = $conn->query("SELECT * FROM satisfaction_surveys");
+$requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$spreadsheet = new Spreadsheet();
+$sheet = $spreadsheet->getActiveSheet();
+
+// ✅ ตั้งค่าหัวตาราง
+$headers = ['ชื่อ', 'นามสกุล'];
+for ($i = 1; $i <= 14; $i++) {
+    $headers[] = "หัวข้อ $i";
+}
+$headers[] = "ข้อเสนอแนะ";
+
+$sheet->fromArray($headers, null, 'A1');
+
+// ✅ ใส่ข้อมูล
+$rowIndex = 2;
+foreach ($requests as $request) {
+    $rowData = [
+        $request['first_name'],
+        $request['last_name'],
+    ];
+    for ($i = 1; $i <= 14; $i++) {
+        $rowData[] = $request["es_id$i"];
+    }
+    $rowData[] = $request['es_complain'];
+
+    $sheet->fromArray($rowData, null, "A$rowIndex");
+    $rowIndex++;
+}
+
+// ✅ ตั้งค่าหัว HTTP เพื่อดาวน์โหลดไฟล์
+header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+header('Content-Disposition: attachment; filename="satisfaction_report.xlsx"');
+header('Cache-Control: max-age=0');
+
+$writer = new Xlsx($spreadsheet);
+$writer->save('php://output');
+exit;
+?>
+
+<?php
+require 'vendor/autoload.php';
+use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\IOFactory;
+
+session_start();
+require 'config.php';
+
+// ดึงข้อมูลจากฐานข้อมูล
+$stmt = $conn->query("SELECT * FROM satisfaction_surveys");
+$requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// คำนวณค่าเฉลี่ย
+$num_responses = count($requests);
+$summary = array_fill(1, 14, 0);
+
+foreach ($requests as $request) {
+    for ($i = 1; $i <= 14; $i++) {
+        $summary[$i] += $request["es_id$i"];
+    }
+}
+
+if ($num_responses > 0) {
+    foreach ($summary as $key => $value) {
+        $summary[$key] = round($value / $num_responses, 2);
+    }
+}
+
+// สร้างไฟล์ Word
+$phpWord = new PhpWord();
+
+// เพิ่มส่วนหัวของไฟล์
+$section = $phpWord->addSection();
+$section->addText('สรุปผลจากแบบประเมินความพึงพอใจของผู้เข้าทดสอบระบบ แจ้ซ่อมแซมอัจฉริยะ', array('bold' => true, 'size' => 16));
+$section->addText('(School Maintenance System) ในรายวิชา ว32104 การออกแบบเทคโนโลยี', array('size' => 14));
+$section->addText('');
+
+// เพิ่มตารางสรุปผล
+$table = $section->addTable(array('borderSize' => 6, 'borderColor' => '000000', 'width' => 100 * 50));
+$table->addRow();
+$table->addCell(2000)->addText('หัวข้อการประเมิน', array('bold' => true));
+$table->addCell(1000)->addText('ค่าเฉลี่ย', array('bold' => true));
+
+foreach ($summary as $key => $value) {
+    $table->addRow();
+    $table->addCell(2000)->addText("หัวข้อ $key");
+    $table->addCell(1000)->addText($value);
+}
+
+// บันทึกไฟล์
+$filename = 'satisfaction_summary.docx';
+$objWriter = IOFactory::createWriter($phpWord, 'Word2007');
+$objWriter->save($filename);
+
+// ดาวน์โหลดไฟล์
+header('Content-Description: File Transfer');
+header('Content-Disposition: attachment; filename=' . $filename);
+header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+header('Content-Transfer-Encoding: binary');
+header('Expires: 0');
+header('Cache-Control: must-revalidate');
+header('Pragma: public');
+header('Content-Length: ' . filesize($filename));
+readfile($filename);
+unlink($filename); // ลบไฟล์หลังจากดาวน์โหลดเสร็จ
+exit;
+?>

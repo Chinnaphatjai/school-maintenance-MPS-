@@ -1,0 +1,14 @@
+{
+    "name": "chinn/school-maintenance",
+    "type": "project",
+    "authors": [
+        {
+            "name": "skip"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "phpoffice/phpspreadsheet": "^4.0",
+        "phpoffice/phpword": "^1.3"
+    }
+}
